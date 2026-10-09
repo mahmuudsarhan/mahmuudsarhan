@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" width="1200" height="200" role="img" aria-label="neon wave">
+  <defs>
+    <linearGradient id="w1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7C3AED"/>
+      <stop offset="35%"  stop-color="#22D3EE"/>
+      <stop offset="70%"  stop-color="#F472B6"/>
+      <stop offset="100%" stop-color="#FACC15"/>
+    </linearGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <path id="unit"
+          d="M0 100 C 60 20, 120 20, 180 100 C 240 180, 300 180, 360 100 C 420 20, 480 20, 540 100 C 600 180, 660 180, 720 100 C 780 20, 840 20, 900 100 C 960 180, 1020 180, 1080 100 C 1140 20, 1200 20, 1260 100"
+          fill="none" stroke="url(#w1)" stroke-width="3" stroke-linecap="round"/>
+    <filter id="glow" x="-30%" y="-200%" width="160%" height="500%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    .slider { animation: slide 5s linear infinite; }
+    .layer2 { animation: slide 8s linear infinite reverse; opacity: .45; }
+    .layer3 { animation: slide 13s linear infinite; opacity: .28; }
+    @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-540px); } }
+
+    .shimmer { animation: shimmer 3.5s ease-in-out infinite; }
+    @keyframes shimmer { 0%,100% { opacity: .9; } 50% { opacity: .45; } }
+  </style>
+
+  <rect x="0" y="0" width="1200" height="200" fill="url(#fade)"/>
+
+  <g class="slider layer3"><use href="#unit"/><use href="#unit" x="540"/></g>
+  <g class="slider layer2"><use href="#unit"/><use href="#unit" x="540"/></g>
+  <g class="slider shimmer" filter="url(#glow)"><use href="#unit"/><use href="#unit" x="540"/></g>
+</svg>

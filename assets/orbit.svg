@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420" role="img" aria-label="orbiting particles">
+  <style>
+    .ring   { fill: none; stroke: #ffffff; stroke-opacity: .16; stroke-width: 1.5; stroke-dasharray: 6 10; }
+    .orbit  { transform-box: view-box; transform-origin: 600px 210px; }
+    .spin-a { animation: spin 22s linear infinite; }
+    .spin-b { animation: spin 34s linear infinite reverse; }
+    .spin-c { animation: spin 14s linear infinite; }
+    .dot    { transform-box: fill-box; transform-origin: center; animation: pulse 2.6s ease-in-out infinite; }
+    .d2 { animation-delay: .5s; } .d3 { animation-delay: 1s; }
+    .d4 { animation-delay: 1.5s; } .d5 { animation-delay: 2s; }
+
+    @keyframes spin  { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1);   opacity: 1; }
+      50%      { transform: scale(1.9); opacity: .25; }
+    }
+
+    .label { font: 600 22px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #ffffff; fill-opacity: .92; }
+    @media (prefers-color-scheme: light) {
+      .ring  { stroke: #0f172a; stroke-opacity: .22; }
+      .label { fill: #0f172a; }
+    }
+  </style>
+
+  <g class="orbit spin-c">
+    <circle class="ring" cx="600" cy="210" r="70"/>
+  </g>
+  <g class="orbit spin-a">
+    <circle class="ring" cx="600" cy="210" r="130"/>
+    <circle class="dot d1" cx="730" cy="210" r="9" fill="#22D3EE"/>
+  </g>
+  <g class="orbit spin-b">
+    <circle class="ring" cx="600" cy="210" r="185"/>
+    <circle class="dot d3" cx="785" cy="210" r="7" fill="#F472B6"/>
+    <circle class="dot d5" cx="415" cy="210" r="7" fill="#FACC15"/>
+  </g>
+
+  <!-- connecting lines -->
+  <g stroke="#ffffff" stroke-opacity=".18" stroke-width="1.5">
+    <line x1="530" y1="210" x2="455" y2="120"/>
+    <line x1="530" y1="210" x2="745" y2="120"/>
+    <line x1="530" y1="210" x2="455" y2="300"/>
+    <line x1="530" y1="210" x2="745" y2="300"/>
+  </g>
+
+  <text class="label" x="600" y="200" text-anchor="middle">&#9889;</text>
+  <text class="label" x="600" y="235" text-anchor="middle" font-size="14" opacity=".75">orbit</text>
+
+  <text class="label" x="455" y="100" text-anchor="middle" font-size="17" opacity=".8">design</text>
+  <text class="label" x="745" y="100" text-anchor="middle" font-size="17" opacity=".8">build</text>
+  <text class="label" x="455" y="322" text-anchor="middle" font-size="17" opacity=".8">ship</text>
+  <text class="label" x="745" y="322" text-anchor="middle" font-size="17" opacity=".8">repeat</text>
+</svg>

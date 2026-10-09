@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-label="neon grid horizon">
+  <defs>
+    <linearGradient id="horizon" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#22D3EE" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="#7C3AED" stop-opacity=".15"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#F472B6" stop-opacity=".55"/>
+      <stop offset="55%"  stop-color="#7C3AED" stop-opacity=".30"/>
+      <stop offset="100%" stop-color="#0EA5E9" stop-opacity=".10"/>
+    </linearGradient>
+    <filter id="hglow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    .vert { stroke: #22D3EE; stroke-opacity: .28; stroke-width: 1; }
+    @media (prefers-color-scheme: light) { .vert { stroke-opacity: .30; } }
+
+    .rows { animation: roll 2.4s linear infinite; }
+    .rows-rev { animation: roll 2.4s linear infinite reverse; }
+    @keyframes roll { from { transform: translateY(0); } to { transform: translateY(24px); } }
+
+    .horizon-line { animation: pulse 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+    .sun { animation: rise 9s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+    @keyframes rise { from { transform: translateY(18px); } to { transform: translateY(-22px); } }
+
+    .star { animation: twinkle 2.6s ease-in-out infinite; }
+    @keyframes twinkle { 0%,100% { opacity: .15; } 50% { opacity: .95; } }
+  </style>
+
+  <rect x="0" y="0" width="1200" height="200" fill="url(#sky)"/>
+
+  <!-- stars -->
+  <g fill="#FFFFFF">
+    <circle class="star" cx="120" cy="40"  r="1.6" style="animation-delay:.1s"/>
+    <circle class="star" cx="260" cy="80"  r="1.2" style="animation-delay:.5s"/>
+    <circle class="star" cx="410" cy="30"  r="1.8" style="animation-delay:.9s"/>
+    <circle class="star" cx="580" cy="70"  r="1.3" style="animation-delay:1.3s"/>
+    <circle class="star" cx="720" cy="25"  r="1.7" style="animation-delay:1.7s"/>
+    <circle class="star" cx="860" cy="85"  r="1.2" style="animation-delay:2.1s"/>
+    <circle class="star" cx="1010" cy="45" r="1.9" style="animation-delay:2.5s"/>
+    <circle class="star" cx="1120" cy="90" r="1.3" style="animation-delay:2.9s"/>
+  </g>
+
+  <!-- sun -->
+  <g class="sun" filter="url(#hglow)">
+    <circle cx="600" cy="185" r="52" fill="#F472B6" opacity=".75"/>
+    <circle cx="600" cy="185" r="66" fill="none" stroke="#FACC15" stroke-opacity=".55" stroke-width="2"/>
+  </g>
+
+  <!-- vertical perspective lines -->
+  <g class="vert">
+    <line x1="600" y1="200" x2="0"    y2="360"/>
+    <line x1="600" y1="200" x2="150"  y2="360"/>
+    <line x1="600" y1="200" x2="300"  y2="360"/>
+    <line x1="600" y1="200" x2="450"  y2="360"/>
+    <line x1="600" y1="200" x2="600"  y2="360"/>
+    <line x1="600" y1="200" x2="750"  y2="360"/>
+    <line x1="600" y1="200" x2="900"  y2="360"/>
+    <line x1="600" y1="200" x2="1050" y2="360"/>
+    <line x1="600" y1="200" x2="1200" y2="360"/>
+  </g>
+
+  <!-- scrolling horizontal rows -->
+  <g class="rows" stroke="#22D3EE" stroke-opacity=".35" stroke-width="1">
+    <line x1="0" y1="212" x2="1200" y2="212"/>
+    <line x1="0" y1="224" x2="1200" y2="224"/>
+    <line x1="0" y1="236" x2="1200" y2="236"/>
+    <line x1="0" y1="248" x2="1200" y2="248"/>
+    <line x1="0" y1="260" x2="1200" y2="260"/>
+    <line x1="0" y1="272" x2="1200" y2="272"/>
+    <line x1="0" y1="284" x2="1200" y2="284"/>
+    <line x1="0" y1="296" x2="1200" y2="296"/>
+    <line x1="0" y1="308" x2="1200" y2="308"/>
+    <line x1="0" y1="320" x2="1200" y2="320"/>
+    <line x1="0" y1="332" x2="1200" y2="332"/>
+    <line x1="0" y1="344" x2="1200" y2="344"/>
+    <line x1="0" y1="356" x2="1200" y2="356"/>
+    <line x1="0" y1="368" x2="1200" y2="368"/>
+  </g>
+  <g class="rows-rev" stroke="#7C3AED" stroke-opacity=".22" stroke-width="1">
+    <line x1="0" y1="216" x2="1200" y2="216"/>
+    <line x1="0" y1="230" x2="1200" y2="230"/>
+    <line x1="0" y1="246" x2="1200" y2="246"/>
+    <line x1="0" y1="266" x2="1200" y2="266"/>
+    <line x1="0" y1="292" x2="1200" y2="292"/>
+    <line x1="0" y1="326" x2="1200" y2="326"/>
+    <line x1="0" y1="358" x2="1200" y2="358"/>
+  </g>
+
+  <line class="horizon-line" x1="0" y1="200" x2="1200" y2="200" stroke="url(#horizon)" stroke-width="3" filter="url(#hglow)"/>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 320" width="520" height="320" role="img" aria-label="radar pulse">
+  <style>
+    .wave { transform-box: view-box; transform-origin: 260px 160px; }
+    .w1 { animation: ping 3.6s cubic-bezier(0,0,.2,1) infinite; }
+    .w2 { animation: ping 3.6s cubic-bezier(0,0,.2,1) infinite 0.9s; }
+    .w3 { animation: ping 3.6s cubic-bezier(0,0,.2,1) infinite 1.8s; }
+    .w4 { animation: ping 3.6s cubic-bezier(0,0,.2,1) infinite 2.7s; }
+
+    @keyframes ping {
+      0%   { transform: scale(.18); opacity: .85; }
+      70%  { opacity: .18; }
+      100% { transform: scale(2.6); opacity: 0; }
+    }
+
+    .sweep { transform-box: view-box; transform-origin: 260px 160px;
+             animation: sweep 4.5s linear infinite; }
+    @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    .beam  { fill: url(#beam); opacity: .45; }
+    .cross { stroke: #ffffff; stroke-opacity: .18; stroke-width: 1; stroke-dasharray: 4 8; }
+    .core  { animation: breathe 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes breathe { 0%,100% { transform: scale(1); opacity: .95; } 50% { transform: scale(1.12); opacity: .7; } }
+    .txt { font: 700 13px ui-monospace, Menlo, monospace; fill: #ffffff; fill-opacity: .8; letter-spacing: 2px; }
+    @media (prefers-color-scheme: light) {
+      .cross { stroke: #0f172a; stroke-opacity: .25; }
+      .txt   { fill: #0f172a; }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#22D3EE" stop-opacity=".85"/>
+      <stop offset="100%" stop-color="#22D3EE" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <circle class="cross" cx="260" cy="160" r="60"  fill="none"/>
+  <circle class="cross" cx="260" cy="160" r="105" fill="none"/>
+
+  <g class="wave w1"><circle cx="260" cy="160" r="105" fill="none" stroke="#7C3AED" stroke-width="2"/></g>
+  <g class="wave w2"><circle cx="260" cy="160" r="105" fill="none" stroke="#22D3EE" stroke-width="2"/></g>
+  <g class="wave w3"><circle cx="260" cy="160" r="105" fill="none" stroke="#F472B6" stroke-width="2"/></g>
+  <g class="wave w4"><circle cx="260" cy="160" r="105" fill="none" stroke="#FACC15" stroke-width="2"/></g>
+
+  <g class="sweep">
+    <path class="beam" d="M260 160 L365 160 A105 105 0 0 0 334 55 Z"/>
+  </g>
+
+  <circle class="core" cx="260" cy="160" r="9" fill="#22D3EE"/>
+  <text class="txt" x="260" y="300" text-anchor="middle">SCANNING</text>
+</svg>

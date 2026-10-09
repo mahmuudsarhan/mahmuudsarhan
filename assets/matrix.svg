@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" width="640" height="300" role="img" aria-label="matrix code rain">
+  <style>
+    .col { font: 700 15px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #22D3EE; }
+    .tail { fill: #0E7490; opacity: .8; }
+    .head { fill: #A5F3FC; }
+    @media (prefers-color-scheme: light) {
+      .col { fill: #0E7490; }
+      .tail { fill: #67E8F9; opacity: .9; }
+      .head { fill: #0F172A; }
+    }
+    .frame { stroke: #22D3EE; stroke-opacity: .25; fill: none; }
+    .scan { animation: scan 4s linear infinite; }
+    @keyframes scan { from { transform: translateY(-40px); opacity: 0; }
+                       20%  { opacity: .25; }
+                       80%  { opacity: .25; }
+                       to   { transform: translateY(340px); opacity: 0; } }
+  </style>
+
+  <rect x="0" y="0" width="640" height="300" fill="#020617" opacity="0"/>
+  <rect class="frame" x="6" y="6" width="628" height="288" rx="14"/>
+
+  <g class="scan"><rect x="6" y="0" width="628" height="34" fill="#22D3EE" opacity=".12"/></g>
+
+  <!-- rain columns: each falls from above the frame -->
+  <g>
+    <!-- 0 -->
+    <g><animateTransform attributeName="transform" type="translate" from="24 -160" to="24 330" dur="2.6s" repeatCount="indefinite"/>
+      <text class="col tail" x="24" y="0">&lt;/&gt;{ };</text><text class="col tail" x="24" y="18">=&gt; ()</text><text class="col tail" x="24" y="36">[ ]:</text><text class="col head" x="24" y="54">01</text></g>
+    <g><animateTransform attributeName="transform" type="translate" from="24 -320" to="24 330" dur="2.6s" begin="1.3s" repeatCount="indefinite"/>
+      <text class="col tail" x="24" y="0">fn()</text><text class="col head" x="24" y="18">10</text></g>
+
+    <!-- 1 -->
+    <g><animateTransform attributeName="transform" type="translate" from="54 -120" to="54 330" dur="2.1s" repeatCount="indefinite"/>
+      <text class="col tail" x="54" y="0">0xFF</text><text class="col tail" x="54" y="18">int8</text><text class="col head" x="54" y="36">01</text></g>
+
+    <!-- 2 -->
+    <g><animateTransform attributeName="transform" type="translate" from="84 -260" to="84 330" dur="3.1s" repeatCount="indefinite"/>
+      <text class="col tail" x="84" y="0">{**}</text><text class="col tail" x="84" y="18">malloc</text><text class="col tail" x="84" y="36">&amp;*ptr</text><text class="col head" x="84" y="54">101</text></g>
+
+    <!-- 3 -->
+    <g><animateTransform attributeName="transform" type="translate" from="114 -180" to="114 330" dur="2.4s" begin=".5s" repeatCount="indefinite"/>
+      <text class="col tail" x="114" y="0">while()</text><text class="col head" x="114" y="18">11</text></g>
+
+    <!-- 4 -->
+    <g><animateTransform attributeName="transform" type="translate" from="144 -320" to="144 330" dur="1.9s" repeatCount="indefinite"/>
+      <text class="col tail" x="144" y="0">#define</text><text class="col tail" x="144" y="18">::</text><text class="col head" x="144" y="36">0110</text></g>
+    <g><animateTransform attributeName="transform" type="translate" from="144 -90" to="144 330" dur="2.9s" begin="1.1s" repeatCount="indefinite"/>
+      <text class="col tail" x="144" y="0">std::</text><text class="col head" x="144" y="18">10</text></g>
+
+    <!-- 5 -->
+    <g><animateTransform attributeName="transform" type="translate" from="174 -200" to="174 330" dur="2.8s" begin=".2s" repeatCount="indefinite"/>
+      <text class="col tail" x="174" y="0">/dev/</text><text class="col tail" x="174" y="18">null</text><text class="col head" x="174" y="36">010</text></g>
+
+    <!-- 6 -->
+    <g><animateTransform attributeName="transform" type="translate" from="204 -140" to="204 330" dur="2.2s" repeatCount="indefinite"/>
+      <text class="col tail" x="204" y="0">{ }</text><text class="col head" x="204" y="18">1</text></g>
+
+    <!-- 7 -->
+    <g><animateTransform attributeName="transform" type="translate" from="234 -300" to="234 330" dur="3.4s" repeatCount="indefinite"/>
+      <text class="col tail" x="234" y="0">&lt;script&gt;</text><text class="col tail" x="234" y="18">async</text><text class="col tail" x="234" y="36">await</text><text class="col head" x="234" y="54">1101</text></g>
+
+    <!-- 8 -->
+    <g><animateTransform attributeName="transform" type="translate" from="264 -100" to="264 330" dur="2.05s" begin=".8s" repeatCount="indefinite"/>
+      <text class="col tail" x="264" y="0">git</text><text class="col head" x="264" y="18">101</text></g>
+
+    <!-- 9 -->
+    <g><animateTransform attributeName="transform" type="translate" from="294 -240" to="294 330" dur="2.7s" repeatCount="indefinite"/>
+      <text class="col tail" x="294" y="0">0b1011</text><text class="col tail" x="294" y="18">&amp;&amp;</text><text class="col head" x="294" y="36">01</text></g>
+
+    <!-- 10 -->
+    <g><animateTransform attributeName="transform" type="translate" from="324 -170" to="324 330" dur="2.35s" begin=".35s" repeatCount="indefinite"/>
+      <text class="col tail" x="324" y="0">regex</text><text class="col head" x="324" y="18">110</text></g>
+
+    <!-- 11 -->
+    <g><animateTransform attributeName="transform" type="translate" from="354 -280" to="354 330" dur="3s" begin="1.4s" repeatCount="indefinite"/>
+      <text class="col tail" x="354" y="0">docker</text><text class="col tail" x="354" y="18">docker</text><text class="col head" x="354" y="36">1001</text></g>
+
+    <!-- 12 -->
+    <g><animateTransform attributeName="transform" type="translate" from="384 -150" to="384 330" dur="2.15s" repeatCount="indefinite"/>
+      <text class="col tail" x="384" y="0">{}</text><text class="col head" x="384" y="18">01</text></g>
+
+    <!-- 13 -->
+    <g><animateTransform attributeName="transform" type="translate" from="414 -330" to="414 330" dur="2.55s" repeatCount="indefinite"/>
+      <text class="col tail" x="414" y="0">stack</text><text class="col tail" x="414" y="18">overflow</text><text class="col head" x="414" y="36">010</text></g>
+
+    <!-- 14 -->
+    <g><animateTransform attributeName="transform" type="translate" from="444 -110" to="444 330" dur="1.85s" begin=".6s" repeatCount="indefinite"/>
+      <text class="col tail" x="444" y="0">λ x</text><text class="col head" x="444" y="18">101</text></g>
+
+    <!-- 15 -->
+    <g><animateTransform attributeName="transform" type="translate" from="474 -220" to="474 330" dur="2.95s" repeatCount="indefinite"/>
+      <text class="col tail" x="474" y="0">[::]</text><text class="col tail" x="474" y="18">ptr</text><text class="col head" x="474" y="36">1101</text></g>
+
+    <!-- 16 -->
+    <g><animateTransform attributeName="transform" type="translate" from="504 -130" to="504 330" dur="2.25s" begin="1.6s" repeatCount="indefinite"/>
+      <text class="col tail" x="504" y="0">npm</text><text class="col head" x="504" y="18">01</text></g>
+
+    <!-- 17 -->
+    <g><animateTransform attributeName="transform" type="translate" from="534 -290" to="534 330" dur="3.2s" repeatCount="indefinite"/>
+      <text class="col tail" x="534" y="0">#!/bin</text><text class="col tail" x="534" y="18">sudo</text><text class="col head" x="534" y="36">1011</text></g>
+
+    <!-- 18 -->
+    <g><animateTransform attributeName="transform" type="translate" from="564 -190" to="564 330" dur="2.45s" begin=".9s" repeatCount="indefinite"/>
+      <text class="col tail" x="564" y="0">&lt;/&gt;</text><text class="col head" x="564" y="18">101</text></g>
+
+    <!-- 19 -->
+    <g><animateTransform attributeName="transform" type="translate" from="594 -240" to="594 330" dur="2.75s" repeatCount="indefinite"/>
+      <text class="col tail" x="594" y="0">bool</text><text class="col tail" x="594" y="18">true</text><text class="col head" x="594" y="36">01</text></g>
+  </g>
+</svg>
