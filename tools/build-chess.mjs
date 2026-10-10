@@ -30,7 +30,6 @@ const ORIGIN = [PANEL_W / 2, PANEL_H / 2];
 
 const NEON_W = "#5EE7F9"; // white side
 const NEON_B = "#F472B6"; // black side
-const WORD = "Sarhan";
 
 const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
@@ -81,7 +80,10 @@ const centerY = (sq) => BOARD_Y + row(sq) * SQUARE + SQUARE / 2;
 
 /* Every piece is drawn in its own 100x100 box, feet on y=80.
    Deliberately vector geometry: no font glyphs, and no crosses anywhere —
-   the king's finial is an orb, not a cross. */
+   the king's finial is an orb, not a cross.
+   HALO says how many leading shapes get the soft outer pass; small bars skip
+   it, which is where a third of the node count used to go. */
+const HALO = { p: 2, r: 1, b: 3, n: 2, q: 5, k: 3 };
 const SHAPES = {
   p: [
     ["c", 50, 32, 13],
@@ -122,25 +124,26 @@ const SHAPES = {
   ],
 };
 
-/** One piece = a halo pass plus a crisp pass. No SVG filters involved. */
-function pieceMarkup(type, colour) {
-  const draw = (attrs) =>
-    SHAPES[type]
-      .map((s) =>
-        s[0] === "p"
-          ? `<path d="${s[1]}"/>`
-          : s[0] === "c"
-            ? `<circle cx="${s[1]}" cy="${s[2]}" r="${s[3]}"/>`
-            : `<rect x="${s[1]}" y="${s[2]}" width="${s[3]}" height="${s[4]}" rx="${s[5]}"/>`
-      )
-      .join("")
-      .replaceAll("<path", `<path ${attrs}`)
-      .replaceAll("<circle", `<circle ${attrs}`)
-      .replaceAll("<rect", `<rect ${attrs}`);
+const shapeTag = (s, attrs = "") => {
+  const a = attrs ? ` ${attrs}` : "";
+  return s[0] === "p"
+    ? `<path${a} d="${s[1]}"/>`
+    : s[0] === "c"
+      ? `<circle${a} cx="${s[1]}" cy="${s[2]}" r="${s[3]}"/>`
+      : `<rect${a} x="${s[1]}" y="${s[2]}" width="${s[3]}" height="${s[4]}" rx="${s[5]}"/>`;
+};
 
+/** A piece = soft outer pass on its silhouette + one crisp pass. No filters. */
+function pieceMarkup(type, colour) {
+  const halo = SHAPES[type]
+    .slice(0, HALO[type])
+    .map((s) => shapeTag(s, `fill="none" stroke="${colour}" stroke-width="9" stroke-opacity=".16" stroke-linejoin="round"`))
+    .join("");
+  const crisp = SHAPES[type]
+    .map((s) => shapeTag(s, `fill="#0A1018" fill-opacity=".92" stroke="${colour}" stroke-width="2" stroke-linejoin="round"`))
+    .join("");
   return (
-    `<g class="halo">${draw(`fill="none" stroke="${colour}" stroke-width="9" stroke-opacity=".16" stroke-linejoin="round"`)}</g>` +
-    `<g class="body">${draw(`fill="#0A1018" fill-opacity=".92" stroke="${colour}" stroke-width="2" stroke-linejoin="round"`)}</g>` +
+    `<g class="halo">${halo}</g><g class="body">${crisp}</g>` +
     (type === "n" ? `<circle cx="60" cy="34" r="2.2" fill="${colour}"/>` : "")
   );
 }
@@ -175,9 +178,9 @@ const F = {
   zoomStart: 0.1,
   zoomEnd: 0.9,
   zoomK: 1.12,
-  shutStart: 0.55, // board starts folding shut
-  shutEnd: 1.1, // edge-on: the swap happens here
-  openEnd: 1.8, // back face fully open
+  shutStart: 0.55,
+  shutEnd: 1.1,
+  openEnd: 1.8,
   holdEnd: 5.0,
   closeStart: 5.0, // back face folds away again
   closeEdge: 5.91, // exactly where scaleY crosses zero on the way home
@@ -185,9 +188,12 @@ const F = {
 };
 const FINALE = 6.25;
 const DURATION = PLAY_END + FINALE;
-const z = (offset) => PLAY_END + offset;
+const z = (o) => PLAY_END + o;
 
-const num = (n) => Number(n.toFixed(3));
+const num = (n) => {
+  if (!Number.isFinite(n)) throw new Error(`non-finite value in animation maths: ${n}`);
+  return Number(n.toFixed(3));
+};
 const pct = (t) => `${num((t / DURATION) * 100)}%`;
 
 const hops = new Map();
@@ -224,13 +230,8 @@ for (const [from, to, , extraFrom] of GAME) {
     const rook = board.get(extraFrom);
     if (!rook) throw new Error(`move ${plyIndex + 1}: no rook on ${extraFrom}`);
     hops.set(rook, [
-      ...(rook ? hops.get(rook) ?? [] : []),
-      {
-        start,
-        end,
-        from: [centerX(extraFrom), centerY(extraFrom)],
-        to: [centerX(rookSquare), centerY(rookSquare)],
-      },
+      ...(hops.get(rook) ?? []),
+      { start, end, from: [centerX(extraFrom), centerY(extraFrom)], to: [centerX(rookSquare), centerY(rookSquare)] },
     ]);
     board.delete(extraFrom);
     board.set(rookSquare, rook);
@@ -265,33 +266,33 @@ const dedupe = (stops) => {
   return out;
 };
 
-/* 1. piece movement: hop out, land with a small rattle */
+/* 1. piece movement: hop out, land with a rattle */
 const pieceAnim = new Map();
 for (const [piece, list] of hops) {
   id += 1;
   const name = `mv${id}`;
   const base = [centerX(piece.startSquare), centerY(piece.startSquare)];
-  const tf = (target, lift = 0, scale = 1) =>
-    `transform:translate(${num(target[0] - base[0])}px,${num(target[1] - base[1] - lift)}px) scale(${scale})`;
+  const tf = (t, lift = 0, scale = 1) =>
+    `transform:translate(${num(t[0] - base[0])}px,${num(t[1] - base[1] - lift)}px) scale(${scale})`;
 
   const stops = [["0%", tf(base)]];
-  let current = base;
+  let cur = base;
   for (const hop of list) {
     const mid = [(hop.from[0] + hop.to[0]) / 2, (hop.from[1] + hop.to[1]) / 2];
-    stops.push([pct(hop.start), tf(current)]);
+    stops.push([pct(hop.start), tf(cur)]);
     stops.push([pct(hop.start + (hop.end - hop.start) * 0.5), tf(mid, 12, 1.14)]);
     stops.push([pct(hop.end), tf(hop.to)]);
     stops.push([pct(hop.end + 0.06), tf([hop.to[0] - 2, hop.to[1] + 1], 0, 1.02)]);
     stops.push([pct(hop.end + 0.12), tf([hop.to[0] + 2, hop.to[1] - 1], 0, 1.01)]);
     stops.push([pct(hop.end + 0.18), tf(hop.to)]);
-    current = hop.to;
+    cur = hop.to;
   }
-  stops.push(["100%", tf(current)]);
+  stops.push(["100%", tf(cur)]);
   emit(name, dedupe(stops));
   pieceAnim.set(piece, name);
 }
 
-/* 2. captured pieces fade out (opacity only, shares the <g> with movement) */
+/* 2. captured pieces fade out (opacity only — shares the <g> with movement) */
 const goneAnim = new Map();
 for (const [piece, { at }] of deaths) {
   id += 1;
@@ -306,8 +307,7 @@ for (const [piece, { at }] of deaths) {
 
 /* 3. last-move highlight */
 const hlStops = (pickFrom) => {
-  const at = (sq) =>
-    `transform:translate(${BOARD_X + col(sq) * SQUARE}px,${BOARD_Y + row(sq) * SQUARE}px)`;
+  const at = (sq) => `transform:translate(${BOARD_X + col(sq) * SQUARE}px,${BOARD_Y + row(sq) * SQUARE}px)`;
   const stops = [];
   GAME.forEach(([from, to], i) => {
     const start = PRE + i * PLY;
@@ -322,36 +322,31 @@ const hlStops = (pickFrom) => {
 emit("hlFrom", hlStops(true));
 emit("hlTo", hlStops(false));
 
-/* 4. capture burst rings */
-const ringAnim = bursts.map(({ at, square }) => {
-  id += 1;
-  const name = `burst${id}`;
+/* 4. every capture ripple, packed into ONE element + ONE animation */
+const capStops = [["0%", "transform:translate(0px,0px) scale(.1);opacity:0"]];
+for (const { at, square } of bursts) {
   const c = [centerX(square), centerY(square)];
-  emit(name, [
-    ["0%", `transform:translate(${c[0]}px,${c[1]}px) scale(.1);opacity:0`],
-    [pct(at), `transform:translate(${c[0]}px,${c[1]}px) scale(.1);opacity:0`],
-    [pct(at + 0.12), `transform:translate(${c[0]}px,${c[1]}px) scale(.45);opacity:.85`],
-    [pct(at + 0.45), `transform:translate(${c[0]}px,${c[1]}px) scale(1.5);opacity:0`],
-    ["100%", `transform:translate(${c[0]}px,${c[1]}px) scale(1.5);opacity:0`],
-  ]);
-  return name;
-});
+  const tf = (scale) => `transform:translate(${c[0]}px,${c[1]}px) scale(${scale})`;
+  capStops.push([pct(at), `${tf(.1)};opacity:0`]);
+  capStops.push([pct(at + 0.12), `${tf(.45)};opacity:.85`]);
+  capStops.push([pct(at + 0.45), `${tf(1.5)};opacity:0`]);
+}
+capStops.push(["100%", "transform:translate(0px,0px) scale(1.5);opacity:0"]);
+id += 1;
+emit(`cap${id}`, capStops);
+const capCls = bind([`cap${id}`]);
 
 /* 5. slow breathing zoom */
 id += 1;
 emit(`breathe${id}`, [
   ["0%", "transform:scale(1)"],
-  ["8.3%", "transform:scale(1.045)"],
-  ["16.6%", "transform:scale(1)"],
-  ["25%", "transform:scale(1.045)"],
-  ["33.3%", "transform:scale(1)"],
-  ["41.6%", "transform:scale(1.045)"],
+  ["12.5%", "transform:scale(1.045)"],
+  ["25%", "transform:scale(1)"],
+  ["37.5%", "transform:scale(1.045)"],
   ["50%", "transform:scale(1)"],
-  ["58.3%", "transform:scale(1.045)"],
-  ["66.6%", "transform:scale(1)"],
-  ["74.9%", "transform:scale(1.045)"],
-  ["83.3%", "transform:scale(1)"],
-  ["91.6%", "transform:scale(1.045)"],
+  ["62.5%", "transform:scale(1.045)"],
+  ["75%", "transform:scale(1)"],
+  ["87.5%", "transform:scale(1.045)"],
   ["100%", "transform:scale(1)"],
 ]);
 const breatheCls = bind([`breathe${id}`]);
@@ -373,13 +368,24 @@ stageStops.push([pct(z(F.closeStart)), zoomAt(F.zoomK)]);
 stageStops.push([pct(z(F.closeEnd)), "transform:translate(0px,0px) scale(1)"]);
 stageStops.push(["100%", "transform:translate(0px,0px) scale(1)"]);
 id += 1;
-emit(
-  `stage${id}`,
-  dedupe(stageStops.sort((a, b) => parseFloat(a[0]) - parseFloat(b[0])))
-);
+emit(`stage${id}`, dedupe(stageStops.sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]))));
 const stageCls = bind([`stage${id}`]);
 
-/* 7. the card flip: board folds shut, name shows on the back */
+/* 7. light sweeping across the board */
+id += 1;
+emit(`sweep${id}`, [
+  ["0%", "transform:translate(-320px,0) skewX(-18deg);opacity:0"],
+  ["6%", "opacity:.5"],
+  ["18%", "opacity:0"],
+  ["50%", "transform:translate(320px,0) skewX(-18deg);opacity:0"],
+  ["56%", "transform:translate(-320px,0) skewX(-18deg);opacity:0"],
+  ["62%", "opacity:.5"],
+  ["74%", "opacity:0"],
+  ["100%", "transform:translate(320px,0) skewX(-18deg);opacity:0"],
+]);
+const sweepCls = bind([`sweep${id}`]);
+
+/* 8. the card flip: board folds shut, emblem shows on the back */
 id += 1;
 emit(`flip${id}`, [
   ["0%", "transform:scaleY(1)"],
@@ -397,86 +403,56 @@ emit(`flip${id}`, [
 ]);
 const flipCls = bind([`flip${id}`]);
 
-// face swap happens while the card is edge-on (|scaleY| <= 0.02)
-const EDGE_OPEN_IN = [z(F.shutEnd - 0.02), z(F.shutEnd + 0.02)];
-const EDGE_CLOSE = [z(F.closeEdge - 0.05), z(F.closeEdge + 0.02)];
-const swap = (from, to) => () => [
+/* faces swap while the card is edge-on (|scaleY| <= 0.02) */
+const open = [z(F.shutEnd - 0.02), z(F.shutEnd + 0.02)];
+const shut = [z(F.closeEdge - 0.05), z(F.closeEdge + 0.02)];
+const faceStops = (from, to) => [
   ["0%", `opacity:${from}`],
-  [pct(EDGE_OPEN_IN[0]), `opacity:${from}`],
-  [pct(EDGE_OPEN_IN[1]), `opacity:${to}`],
-  [pct(EDGE_CLOSE[0]), `opacity:${to}`],
-  [pct(EDGE_CLOSE[1]), `opacity:${from}`],
+  [pct(open[0]), `opacity:${from}`],
+  [pct(open[1]), `opacity:${to}`],
+  [pct(shut[0]), `opacity:${to}`],
+  [pct(shut[1]), `opacity:${from}`],
   ["100%", `opacity:${from}`],
 ];
-
 id += 1;
-emit(`front${id}`, swap(1, 0)());
+emit(`front${id}`, faceStops(1, 0));
 const frontCls = bind([`front${id}`]);
-
 id += 1;
-emit(`back${id}`, swap(0, 1)());
+emit(`back${id}`, faceStops(0, 1));
 const backCls = bind([`back${id}`]);
 
-/* 8. the name: chromatic ghosts + halo + gradient face, rising into place */
-const WORD_SIZE = 78;
-const WORD_BASELINE = BOARD_CY + 20; // optical centring: letters + rule straddle the middle
-const advances = [...WORD].map((ch) =>
-  ch === "S" ? 52 : ch === "r" ? 32 : ch === "i" || ch === "l" ? 22 : 46
-);
-const track = -3;
-const wordWidth = advances.reduce((a, b) => a + b, 0) + track * (WORD.length - 1);
-
-const letterEls = [];
-let letterX = BOARD_CX - wordWidth / 2;
-[...WORD].forEach((ch, i) => {
-  const adv = advances[i];
-  const cx = letterX + adv / 2;
-  letterX += adv + track;
-
-  const start = z(F.openEnd + i * 0.07);
-  const settle = start + 0.42;
-  id += 1;
-  emit(`ltr${id}`, [
-    ["0%", "opacity:0;transform:translateY(26px) scale(.86)"],
-    [pct(start), "opacity:0;transform:translateY(26px) scale(.86)"],
-    [pct(start + 0.12), "opacity:.85;transform:translateY(4px) scale(1.04)"],
-    [pct(settle), "opacity:1;transform:translateY(0) scale(1)"],
-    [pct(z(F.holdEnd)), "opacity:1;transform:translateY(0) scale(1)"],
-    [pct(z(F.closeStart + 0.35)), "opacity:0;transform:translateY(-14px) scale(.94)"],
-    ["100%", "opacity:0;transform:translateY(-14px) scale(.94)"],
-  ]);
-
-  const glyph = `<text class="wghost a" dx="-2.5">${ch}</text><text class="wghost b" dx="2.5">${ch}</text><text class="wglow">${ch}</text><text class="wglow2">${ch}</text><text class="word">${ch}</text>`;
-  letterEls.push(
-    `<g transform="translate(${num(cx)} ${num(WORD_BASELINE)})"><g class="ltr ${bind([`ltr${id}`])}">${glyph}</g></g>`
-  );
-});
-
-/* the rule sweeps out under the name */
+/* 9. the reveal: a neon iris blooms on the back face */
 id += 1;
-emit(`rule${id}`, [
-  ["0%", "transform:scaleX(0);opacity:0"],
-  [pct(z(F.openEnd + 0.1)), "transform:scaleX(0);opacity:0"],
-  [pct(z(F.openEnd + 0.55)), "transform:scaleX(1);opacity:1"],
-  [pct(z(F.holdEnd)), "transform:scaleX(1);opacity:1"],
-  [pct(z(F.closeStart + 0.3)), "transform:scaleX(0);opacity:0"],
-  ["100%", "transform:scaleX(0);opacity:0"],
+emit(`iris${id}`, [
+  ["0%", "transform:scale(.2);opacity:0"],
+  [pct(z(F.openEnd - 0.22)), "transform:scale(.2);opacity:0"],
+  [pct(z(F.openEnd + 0.1)), "transform:scale(1);opacity:1"],
+  [pct(z(F.holdEnd)), "transform:scale(1.06);opacity:1"],
+  [pct(z(F.closeStart + 0.3)), "transform:scale(1.25);opacity:0"],
+  ["100%", "transform:scale(1.25);opacity:0"],
 ]);
-const ruleCls = bind([`rule${id}`]);
+const irisCls = bind([`iris${id}`]);
 
-/* 9. shockwaves behind the name */
-const finaleRings = [0, 0.13, 0.26].map((off) => {
+/* 10. slow rotations on the back face — one rule each, no filters */
+const spin = (name, from, to, origin) => {
   id += 1;
-  const at = z(F.openEnd - 0.1 + off);
-  emit(`ring${id}`, [
-    ["0%", `transform:translate(${BOARD_CX}px,${BOARD_CY}px) scale(.2);opacity:0`],
-    [pct(at), `transform:translate(${BOARD_CX}px,${BOARD_CY}px) scale(.2);opacity:0`],
-    [pct(at + 0.2), `transform:translate(${BOARD_CX}px,${BOARD_CY}px) scale(.55);opacity:.55`],
-    [pct(at + 0.9), `transform:translate(${BOARD_CX}px,${BOARD_CY}px) scale(2.4);opacity:0`],
-    ["100%", `transform:translate(${BOARD_CX}px,${BOARD_CY}px) scale(2.4);opacity:0`],
+  emit(`${name}${id}`, [
+    ["0%", `transform:rotate(${from}deg)`],
+    ["100%", `transform:rotate(${to}deg)`],
   ]);
-  return `<circle class="ring ${bind([`ring${id}`])}" r="100"/>`;
-});
+  return { cls: bind([`${name}${id}`]), origin };
+};
+const spinA = spin("spinA", 0, 360, BOARD_CY);
+const spinB = spin("spinB", 360, 0, BOARD_CY);
+
+const dots = [0, 90, 180, 270]
+  .map(
+    (a) =>
+      `<circle class="dot" cx="${num(BOARD_CX + Math.cos((a * Math.PI) / 180) * 90)}" cy="${num(
+        BOARD_CY + Math.sin((a * Math.PI) / 180) * 90
+      )}" r="3.5"/>`
+  )
+  .join("");
 
 /* --------------------------------------------------------------- rendering */
 
@@ -504,7 +480,6 @@ const coords = [
 const rendered = new Map();
 for (const [piece, name] of pieceAnim) rendered.set(piece, [name]);
 for (const [piece, name] of goneAnim) rendered.set(piece, [...(rendered.get(piece) ?? []), name]);
-// pieces that never move still have to be drawn — they just carry no animation
 for (const piece of allPieces) if (!rendered.has(piece)) rendered.set(piece, []);
 
 const pieceEls = [...rendered].map(([piece, anims]) => {
@@ -512,12 +487,13 @@ const pieceEls = [...rendered].map(([piece, anims]) => {
   const colour = piece.white ? NEON_W : NEON_B;
   return (
     `<g class="piece${anims.length ? ` ${bind(anims)}` : ""}">` +
-    `<g transform="translate(${base[0]} ${base[1]}) scale(0.46) translate(-50 -50)">` +
-    `${pieceMarkup(piece.type, colour)}</g></g>`
+    `<g transform="translate(${base[0]} ${base[1]}) scale(.46) translate(-50 -50)">${pieceMarkup(
+      piece.type,
+      colour
+    )}</g></g>`
   );
 });
 
-/* front face: the game */
 const frontFace = `<g class="face front ${frontCls}">
 <g clip-path="url(#clip)">
 ${squares.join("")}
@@ -525,84 +501,69 @@ ${squares.join("")}
 ${Array.from({ length: 9 }, (_, i) => `<line class="gridline" x1="${BOARD_X + i * SQUARE}" y1="${BOARD_Y}" x2="${BOARD_X + i * SQUARE}" y2="${BOARD_Y + boardPx}"/>`).join("")}
 ${Array.from({ length: 9 }, (_, i) => `<line class="gridline" x1="${BOARD_X}" y1="${BOARD_Y + i * SQUARE}" x2="${BOARD_X + boardPx}" y2="${BOARD_Y + i * SQUARE}"/>`).join("")}
 </g>
+<g class="sweep ${sweepCls}"><rect class="band" x="${BOARD_X}" y="${BOARD_Y}" width="150" height="${boardPx}"/></g>
 <g class="hl ${bind(["hlFrom"])}"><rect width="${SQUARE}" height="${SQUARE}"/></g>
 <g class="hl ${bind(["hlTo"])}"><rect width="${SQUARE}" height="${SQUARE}"/></g>
+<circle class="ripple ${capCls}" cx="${BOARD_CX}" cy="${BOARD_CY}" r="18"/>
 ${pieceEls.join("\n")}
-${ringAnim.map((a) => `<g class="ring ${bind([a])}"><circle r="20"/></g>`).join("\n")}
 </g>
 <rect x="${BOARD_X}" y="${BOARD_Y}" width="${boardPx}" height="${boardPx}" fill="none" stroke="#5EE7F9" stroke-opacity=".35"/>
 ${coords.join("\n")}
 </g>`;
 
-/* back face: the name, revealed by the flip. Pre-mirrored about the board's
-   horizontal centre so the card flip leaves it upright. */
 const backFace = `<g class="face back ${backCls}" transform="translate(0 ${BOARD_CY * 2}) scale(1 -1)">
-<rect class="backplate" x="${BOARD_X}" y="${BOARD_Y}" width="${boardPx}" height="${boardPx}"/>
-<g clip-path="url(#clip)">
-<g class="rays">
-${Array.from({ length: 16 }, (_, i) => {
-  const a = (i / 16) * Math.PI * 2;
-  return `<line class="ray" x1="${BOARD_CX}" y1="${BOARD_CY}" x2="${num(BOARD_CX + Math.cos(a) * 420)}" y2="${num(BOARD_CY + Math.sin(a) * 420)}"/>`;
-}).join("")}
+<rect class="plate" x="${BOARD_X}" y="${BOARD_Y}" width="${boardPx}" height="${boardPx}"/>
+<g class="iris ${irisCls}">
+<circle class="glowdisc" cx="${BOARD_CX}" cy="${BOARD_CY}" r="86"/>
+<g class="spin ${spinA.cls}" style="transform-origin:${BOARD_CX}px ${BOARD_CY}px">
+<circle class="ringA" cx="${BOARD_CX}" cy="${BOARD_CY}" r="66"/>
+${dots}
 </g>
-<g class="pulse">${finaleRings.join("\n")}</g>
-${letterEls.join("\n")}
-<g class="${ruleCls}">
-<rect class="rule" x="${num(BOARD_CX - wordWidth / 2)}" y="${num(WORD_BASELINE + 34)}" width="${num(wordWidth)}" height="3" rx="1.5"/>
+<g class="spin ${spinB.cls}" style="transform-origin:${BOARD_CX}px ${BOARD_CY}px">
+<circle class="ringB" cx="${BOARD_CX}" cy="${BOARD_CY}" r="66"/>
+<circle class="ringB" cx="${BOARD_CX}" cy="${BOARD_CY}" r="96"/>
 </g>
+<circle class="core" cx="${BOARD_CX}" cy="${BOARD_CY}" r="16"/>
+<circle class="coreDot" cx="${BOARD_CX}" cy="${BOARD_CY}" r="5"/>
 </g>
-<rect x="${BOARD_X}" y="${BOARD_Y}" width="${boardPx}" height="${boardPx}" fill="none" stroke="#F0ABFC" stroke-opacity=".5"/>
 </g>`;
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PANEL_W} ${PANEL_H}" width="${PANEL_W}" height="${PANEL_H}" role="img" aria-label="Neon chess animation that flips the board to reveal the name Sarhan">
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PANEL_W} ${PANEL_H}" width="${PANEL_W}" height="${PANEL_H}" role="img" aria-label="Neon chess animation: a game plays out, then the board flips">
 <defs>
-<linearGradient id="wordGrad" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0%" stop-color="#ECFEFF"/><stop offset="38%" stop-color="#5EE7F9"/>
-<stop offset="72%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#F472B6"/>
-</linearGradient>
-<linearGradient id="ruleGrad" x1="0" y1="0" x2="1" y2="0">
-<stop offset="0%" stop-color="#5EE7F9"/><stop offset="100%" stop-color="#F472B6"/>
-</linearGradient>
-<radialGradient id="plateGrad" cx=".5" cy=".45" r=".75">
-<stop offset="0%" stop-color="#1B2440"/><stop offset="100%" stop-color="#0B0F1A"/>
-</radialGradient>
+<radialGradient id="plateGrad" cx=".5" cy=".5" r=".7"><stop offset="0%" stop-color="#241C42"/><stop offset="100%" stop-color="#0A0E18"/></radialGradient>
+<linearGradient id="bandGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#5EE7F9" stop-opacity="0"/><stop offset="50%" stop-color="#5EE7F9" stop-opacity=".55"/><stop offset="100%" stop-color="#5EE7F9" stop-opacity="0"/></linearGradient>
 <clipPath id="clip"><rect x="${BOARD_X}" y="${BOARD_Y}" width="${boardPx}" height="${boardPx}"/></clipPath>
 </defs>
 <style>
 .bg{fill:#0D1117}
-.backplate{fill:url(#plateGrad)}
-.rays{transform-box:view-box;transform-origin:${BOARD_CX}px ${BOARD_CY}px;animation-name:spin;animation-duration:${num(DURATION * 3)}s;animation-iteration-count:infinite;animation-timing-function:linear}
-.ray{stroke:#A78BFA;stroke-opacity:.08;stroke-width:1.5}
-.pulse{animation-name:pulseA;animation-duration:${num(DURATION)}s;animation-iteration-count:infinite;animation-timing-function:linear}
+.plate{fill:url(#plateGrad)}
+.band{fill:url(#bandGrad)}
 .sqL{fill:#0F1A24}
 .sqD{fill:#0B1119}
 .gridline{stroke:#5EE7F9;stroke-opacity:.07;stroke-width:1}
 .coord{font:600 10px ui-monospace,Menlo,monospace;fill:#3D4757;text-anchor:middle}
-.piece,.stage,.breath,.flipper,.face,.ring,.hl,.ltr,.rule{animation-duration:${num(DURATION)}s;animation-iteration-count:infinite;animation-timing-function:linear}
-.piece,.ltr{transform-box:fill-box;transform-origin:center}
-.stage,.breath,.flipper{transform-box:view-box;transform-origin:50% 46.5%}
-.hl{transform-box:view-box;transform-origin:0 0}
+.piece,.stage,.breath,.flipper,.face,.ripple,.hl,.sweep,.iris,.spin{animation-duration:${num(DURATION)}s;animation-iteration-count:infinite;animation-timing-function:linear}
+.piece{transform-box:fill-box;transform-origin:center}
+.stage,.breath,.flipper,.iris,.spin{transform-box:view-box;transform-origin:50% 46.5%}
+.sweep,.hl,.ripple{transform-box:view-box;transform-origin:0 0}
 .hl{fill:#5EE7F9;opacity:.16}
-.ring{fill:none;stroke:#F0ABFC;stroke-width:2;opacity:0}
-.word{font:italic 900 ${WORD_SIZE}px "Segoe UI","Helvetica Neue",Arial,sans-serif;text-anchor:middle;fill:url(#wordGrad);stroke:#F0ABFC;stroke-width:1.1;paint-order:stroke}
-.wglow{fill:none;stroke:#A78BFA;stroke-width:17;stroke-opacity:.15}
-.wglow2{fill:none;stroke:#5EE7F9;stroke-width:7;stroke-opacity:.3}
-.wghost{font:italic 900 ${WORD_SIZE}px "Segoe UI","Helvetica Neue",Arial,sans-serif;text-anchor:middle;opacity:.4}
-.wghost.a{fill:#5EE7F9}
-.wghost.b{fill:#F472B6}
-.rule{fill:url(#ruleGrad)}
+.ripple{fill:none;stroke:#FDE68A;stroke-width:2.5;opacity:0}
+.glowdisc{fill:#A78BFA;opacity:.10}
+.ringA{fill:none;stroke:#5EE7F9;stroke-width:2;stroke-dasharray:10 12;opacity:.65}
+.ringB{fill:none;stroke:#F472B6;stroke-width:1.5;stroke-dasharray:3 14;opacity:.5}
+.dot{fill:#5EE7F9;opacity:.9}
+.core{fill:#0A0E18;stroke:#A78BFA;stroke-width:2.5}
+.coreDot{fill:#F0ABFC}
 ${rules.join("\n")}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulseA{0%{opacity:.55}18%{opacity:.2}36%{opacity:.55}54%{opacity:.2}72%{opacity:.55}90%{opacity:.2}100%{opacity:.55}}
 ${bindings.join("\n")}
 @media (prefers-color-scheme:light){
 .bg{fill:#FFFFFF}.sqL{fill:#F4F8FB}.sqD{fill:#E8EFF5}.coord{fill:#94A3B8}
-.gridline{stroke:#0EA5E9;stroke-opacity:.12}.backplate{fill:#F7F2FF}
-.word{stroke:#7C3AED}.ray{stroke-opacity:.1}
+.gridline{stroke:#0EA5E9;stroke-opacity:.12}.plate{fill:#F6F3FF}
+.glowdisc{opacity:.14}.core{fill:#FFFFFF}
 }
 @media (prefers-reduced-motion:reduce){
-.piece,.stage,.breath,.flipper,.face,.ring,.hl,.ltr,.rule,.rays,.pulse{animation:none}
-.hl,.ring{opacity:0}
+.piece,.stage,.breath,.flipper,.face,.ripple,.hl,.sweep,.iris,.spin{animation:none}
+.hl,.ripple,.iris{opacity:0}
 }
 </style>
 <rect class="bg" width="${PANEL_W}" height="${PANEL_H}"/>
@@ -621,5 +582,5 @@ mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, svg);
 console.log(
   `wrote ${OUT}\n  ${GAME.length} plies · ${num(DURATION)}s loop · ${(svg.length / 1024).toFixed(1)} KB · ` +
-    `${pieceEls.length} pieces · board flips to "${WORD}"`
+    `${pieceEls.length} pieces · ${bindings.length} animations · ${(svg.match(/<(path|circle|rect|line)\b/g) ?? []).length} shapes`
 );
